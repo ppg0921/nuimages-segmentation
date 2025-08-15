@@ -63,7 +63,7 @@ if __name__ == "__main__":
     # n_epochs = 10
     for epoch in range(args.epochs):
         print(f"Epoch {epoch+1}/{args.epochs}")
-        train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=100)
+        train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=1000)
         lr_scheduler.step()
         evaluate(model, data_loader_val, device=device)
 
