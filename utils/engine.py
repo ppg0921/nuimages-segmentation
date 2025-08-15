@@ -14,13 +14,13 @@ from . import utils
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
-    print("before model.train()")
+    # print("before model.train()")
     model.train()
-    print("after model.train()")
+    # print("after model.train()")
     metric_logger = utils.MetricLogger(delimiter="  ")
-    print("after metric_logger instantiation")
+    # print("after metric_logger instantiation")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
-    print("after adding lr meter to metric_logger")
+    # print("after adding lr meter to metric_logger")
     header = 'Epoch: [{}]'.format(epoch)
 
     lr_scheduler = None
@@ -30,9 +30,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
 
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
-    print("before for loop")
+    # print("before for loop")
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
-        print(f"images: {len(images)}, targets: {len(targets)}")
+        # print(f"images: {len(images)}, targets: {len(targets)}")
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
