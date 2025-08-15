@@ -39,8 +39,8 @@ if __name__ == "__main__":
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     print(f"Using device: {device}")
 
-    data_loader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4, collate_fn=collate_fn)
-    data_loader_val = DataLoader(dataset_val, batch_size=1, shuffle=False, num_workers=4,
+    data_loader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=0, collate_fn=collate_fn)
+    data_loader_val = DataLoader(dataset_val, batch_size=1, shuffle=False, num_workers=0,
                                  collate_fn=collate_fn)
 
     model = get_model_instance_segmentation(num_classes)
