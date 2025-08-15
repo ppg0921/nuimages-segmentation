@@ -9,14 +9,24 @@ https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 import torch
 from nuimages import NuImages
 from torch.utils.data import DataLoader
+import argparse
 
 from nuimages_dataset import NuImagesDataset
 from utils.engine import train_one_epoch, evaluate
 from utils.model_utils import get_model_instance_segmentation, get_transform, collate_fn
 
 if __name__ == "__main__":
-    nuimages = NuImages(dataroot="nuimages", version="v1.0-train", verbose=True, lazy=False)
-    nuimages_val = NuImages(dataroot="nuimages", version="v1.0-val", verbose=True, lazy=False)
+    
+    parser = argparse.ArgumentParser(description="Fine-tune Mask-RCNN on NuImages dataset")
+    parser.add_argument('--dataroot', type=str, required=True, help="Path to nuImages data root")
+    parser.add_argument('--train_version', type=str, default="v1.0-train", help="NuImages dataset version")
+    parser.add_argument('--val_version', type=str, default="v1.0-val", help="NuImages validation dataset version")
+    parser.add_argument('--epochs', type=int, default=10, help="Number of epochs to train")
+    
+    args = parser.parse_args()
+
+    nuimages = NuImages(dataroot=args.dataroot, version=args.train_version, verbose=True, lazy=False)
+    nuimages_val = NuImages(dataroot=args.dataroot, version=args.val_version, verbose=True, lazy=False)
     transforms = get_transform(train=True)
     transforms_val = get_transform(train=False)
     dataset = NuImagesDataset(nuimages, transforms=transforms)
@@ -26,7 +36,7 @@ if __name__ == "__main__":
 
     num_classes = len(nuimages.category) + 1  # add one for background class
 
-    device = torch.device('cuda:1') if torch.cuda.is_available() else torch.device('cpu')
+    device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4, collate_fn=collate_fn)
     data_loader_val = DataLoader(dataset_val, batch_size=1, shuffle=False, num_workers=4,
@@ -47,8 +57,8 @@ if __name__ == "__main__":
                                                    gamma=0.1)
 
 
-    n_epochs = 10
-    for epoch in range(n_epochs):
+    # n_epochs = 10
+    for epoch in range(args.epochs):
         train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
         lr_scheduler.step()
         evaluate(model, data_loader_val, device=device)
