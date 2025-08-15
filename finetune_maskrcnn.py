@@ -37,6 +37,7 @@ if __name__ == "__main__":
     num_classes = len(nuimages.category) + 1  # add one for background class
 
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+    print(f"Using device: {device}")
 
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4, collate_fn=collate_fn)
     data_loader_val = DataLoader(dataset_val, batch_size=1, shuffle=False, num_workers=4,
@@ -56,9 +57,10 @@ if __name__ == "__main__":
                                                    step_size=3,
                                                    gamma=0.1)
 
-
+    print("start training")
     # n_epochs = 10
     for epoch in range(args.epochs):
+        print(f"Epoch {epoch+1}/{args.epochs}")
         train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
         lr_scheduler.step()
         evaluate(model, data_loader_val, device=device)
