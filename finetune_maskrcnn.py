@@ -42,7 +42,9 @@ if __name__ == "__main__":
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=0, collate_fn=collate_fn)
     data_loader_val = DataLoader(dataset_val, batch_size=1, shuffle=False, num_workers=0,
                                  collate_fn=collate_fn)
-
+    print("before calling first batch")
+    first_batch = next(iter(data_loader))  # does this return?
+    print("after calling first batch")
     model = get_model_instance_segmentation(num_classes)
 
     # Move model to GPU
