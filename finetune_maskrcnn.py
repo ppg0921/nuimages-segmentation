@@ -35,6 +35,7 @@ if __name__ == "__main__":
     print(f"{len(dataset)} training samples and {len(dataset_val)} val samples.")
 
     num_classes = len(nuimages.category) + 1  # add one for background class
+    print(f"num_classes = {num_classes}")
 
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     print(f"Using device: {device}")
