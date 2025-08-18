@@ -67,6 +67,7 @@ if __name__ == "__main__":
         train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=1000)
         lr_scheduler.step()
         evaluate(model, data_loader_val, device=device)
+        torch.save(model.state_dict(), f"nuimages_maskrcnn_epoch{epoch}.pth")
 
     torch.save(model.state_dict(), "nuimages_maskrcnn.pth")
 
