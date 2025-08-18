@@ -33,8 +33,14 @@ if __name__ == "__main__":
     dataset_val = NuImagesDataset(nuimages_val, transforms=transforms_val)
 
     print(f"{len(dataset)} training samples and {len(dataset_val)} val samples.")
+    
+    # for i in range(5):
+    #     img, target = dataset[i]
+    #     print("Image", i)
+    #     print("  Labels:", target["labels"].unique().tolist())
 
-    num_classes = len(nuimages.category) + 1  # add one for background class
+    # num_classes = len(nuimages.category) + 1  # add one for background class
+    num_classes = 10+1  # match nuscenes categories
     print(f"num_classes = {num_classes}")
 
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -47,6 +53,11 @@ if __name__ == "__main__":
     # first_batch = next(iter(data_loader))  # does this return?
     # print("after calling first batch")
     model = get_model_instance_segmentation(num_classes)
+    
+    
+    # print(model.roi_heads.box_predictor.cls_score.out_features)
+    # print(model.roi_heads.mask_predictor.mask_fcn_logits.out_channels)
+
 
     # Move model to GPU
     model.to(device)

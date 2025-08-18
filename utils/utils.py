@@ -12,6 +12,34 @@ import os
 import math
 import sys
 
+# nuImages → nuScenes 10-class mapping
+
+NUIM_DET_CLASSES = [
+    'car', 'truck', 'trailer', 'bus', 'construction_vehicle',
+    'bicycle', 'motorcycle', 'pedestrian', 'traffic_cone', 'barrier'
+]
+
+CLASS_TO_ID = {name: i for i, name in enumerate(NUIM_DET_CLASSES)}
+
+NAME_MAPPING = {
+    'vehicle.car': 'car',
+    'vehicle.truck': 'truck',
+    'vehicle.trailer': 'trailer',
+    'vehicle.bus.bendy': 'bus',
+    'vehicle.bus.rigid': 'bus',
+    'vehicle.construction': 'construction_vehicle',
+    'vehicle.bicycle': 'bicycle',
+    'vehicle.motorcycle': 'motorcycle',
+    'human.pedestrian.adult': 'pedestrian',
+    'human.pedestrian.child': 'pedestrian',
+    'human.pedestrian.construction_worker': 'pedestrian',
+    'human.pedestrian.police_officer': 'pedestrian',
+    'movable_object.trafficcone': 'traffic_cone',
+    'movable_object.barrier': 'barrier',
+    # All other categories are ignored for detection
+}
+
+
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.

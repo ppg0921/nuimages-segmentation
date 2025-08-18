@@ -22,6 +22,7 @@ import torch
 from PIL import Image
 from nuimages import NuImages
 from nuimages.utils.utils import mask_decode
+from utils.utils import NAME_MAPPING, CLASS_TO_ID
 
 
 class NuImagesDataset(object):
@@ -91,6 +92,16 @@ class NuImagesDataset(object):
             h = b[3] - b[1]
             if w > 0 and h > 0:
                 self.object_anns_dict[object_sd_token].append(o)
+        
+        self._cat_token_to_label = {}
+        for cat in self.nuimages.category:
+            fine = cat['name']
+            coarse = NAME_MAPPING.get(fine)
+            self._cat_token_to_label[cat['token']] = None if coarse is None else CLASS_TO_ID[coarse]
+        
+        # Small per-image caches
+        self._kept_cache = {}          # sd_token -> (kept_indices, kept_labels)
+        self._inst_mask_cache = {}     # sd_token -> np.ndarray [H,W]  (optional; set if memory fits)
 
     def __len__(self):
         return len(self.samples_with_objects)
@@ -129,6 +140,39 @@ class NuImagesDataset(object):
 
         # Get the object annotations corresponding to this sample data only
         object_anns = self.object_anns_dict[sd_token]
+        
+        kept = self._kept_cache.get(sd_token)
+        if kept is None:
+            kept_indices = []
+            kept_labels = []
+            ct2l = self._cat_token_to_label  # local binding (faster)
+            for i, ann in enumerate(object_anns):
+                lbl = ct2l.get(ann['category_token'])
+                if lbl is not None:
+                    kept_indices.append(i)
+                    kept_labels.append(lbl)
+            self._kept_cache[sd_token] = (kept_indices, kept_labels)
+        else:
+            kept_indices, kept_labels = kept
+
+        # if nothing to keep
+        if not kept_indices:
+            w, h = image.size
+            target = {
+                "boxes":   torch.zeros((0, 4), dtype=torch.float32),
+                "labels":  torch.zeros((0,), dtype=torch.int64),
+                "masks":   torch.zeros((0, h, w), dtype=torch.uint8),
+                "image_id": torch.tensor([idx], dtype=torch.int64),
+                "area":    torch.zeros((0,), dtype=torch.float32),
+                "iscrowd": torch.zeros((0,), dtype=torch.int64),
+            }
+            if self.transforms is not None:
+                image, target = self.transforms(image, target)
+            return image, target
+        
+        kept_boxes = [object_anns[i]['bbox'] for i in kept_indices]
+        boxes = torch.as_tensor(kept_boxes, dtype=torch.float32)
+        labels = torch.as_tensor(kept_labels, dtype=torch.int64)
 
         # NOTE: Surface annotations in nuscenes lack bounding boxes and instance IDs. Skip for now.
         # if self.learn_surfaces:
@@ -137,6 +181,7 @@ class NuImagesDataset(object):
 
         # Get bounding boxes
         # Note object_ann['bbox'] gives the bounding box as [xmin, ymin, xmax, ymax]
+        '''
         boxes = torch.as_tensor([o['bbox'] for o in object_anns], dtype=torch.float32)
 
         # Get class labels for each bounding box
@@ -144,13 +189,27 @@ class NuImagesDataset(object):
         categories = [self.nuimages.get('category', token) for token in category_tokens]
         labels = torch.as_tensor([self._category_name_to_id[cat['name']] for cat in categories],
                                  dtype=torch.int64)
+        '''
 
         # Get nuimages segmentation masks
         # The nuimages instance mask is (H by W) where each value is 0 to N (N is number of object annotations)
         # Convert this to a single (N by H by W) array
+        '''
         instance_mask = get_instance_mask(self.nuimages, image, object_anns)
         masks = np.array([instance_mask == i+1 for i in range(len(object_anns))]).astype(np.uint8)
         masks = torch.as_tensor(masks)
+        '''
+        '''
+        instance_mask = get_instance_mask(self.nuimages, image, object_anns)
+        '''
+        instance_mask = self._inst_mask_cache.get(sd_token)
+        if instance_mask is None:
+            # get_instance_mask assigns 1..N to object_anns in original order
+            instance_mask = get_instance_mask(self.nuimages, image, object_anns)
+            # comment this in if memory allows caching:
+            self._inst_mask_cache[sd_token] = instance_mask
+        masks_np = np.array([instance_mask == (i + 1) for i in kept_indices], dtype=np.uint8)
+        masks = torch.as_tensor(masks_np, dtype=torch.uint8)
 
         # Use key camera token as image identifier
         # Convert key camera token from hexadecimal to an integer, and use it as the unique identifier
